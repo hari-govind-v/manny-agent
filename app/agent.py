@@ -9,16 +9,18 @@ load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 ANONYMOUS_ID = "__anonymous__"
-ROLE = ""
 
 def run_agent(
     user_message: str, 
-    user: str = ANONYMOUS_ID, 
-    user_role: str = ROLE
+    user: str = "", 
+    user_role: str = ""
 ) -> tuple[str, str | None, str | None]:
 
     if user not in conversations:
         conversations[user] = [system_prompt]
+
+    if user and user_role:
+        user_message = f"{user_role} {user} says '{user_message}'" 
 
     conversations[user].append({"role": "user", "content": user_message})
 

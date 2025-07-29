@@ -10,7 +10,9 @@ app = FastAPI()
 async def chat_with_manny(request: ChatRequest):
 
     user_message = request.message.strip()
-    response, name, role = run_agent(user_message)
+    name = request.name.strip()
+    role = request.role.strip()
+    response, name, role = run_agent(user_message, name, role)
 
     return {
         "response": response,
