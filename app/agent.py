@@ -1,46 +1,82 @@
-# app/agent.py
+import json
 from openai import OpenAI
 import os
-from tools.add_tasks import add_task, add_task_schema
-from contants import conversations
 from dotenv import load_dotenv
+from constants import conversations, system_prompt
+from tools.tools import tools, tools_map
 
 load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+ANONYMOUS_ID = "__anonymous__"
+ROLE = ""
 
-add_tasks_tool = {
-    "type": "function",
-    "function": add_task_schema
-}
-
-def run_agent(prompt: str, user: str) -> str:
+def run_agent(
+    user_message: str, 
+    user: str = ANONYMOUS_ID, 
+    user_role: str = ROLE
+) -> tuple[str, str | None, str | None]:
 
     if user not in conversations:
-        conversations[user] = [
-            {"role": "system", "content": f"You are Manny, a helpful assistant that manages tasks for user {user}. Always use available tools to respond when a task is mentioned."}
-        ]
-   
-    conversations[user].append({"role": "user", "content": prompt})
-    
+        conversations[user] = [system_prompt]
+
+    conversations[user].append({"role": "user", "content": user_message})
+
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4o-mini",
         messages=conversations[user],
-        tools=[add_tasks_tool],
+        tools=tools,
         tool_choice="auto"
     )
 
     message = response.choices[0].message
+    conversations[user].append(message)
 
     if message.tool_calls:
+        tool_call_messages = []
+        name, role = None, None
+
         for tool_call in message.tool_calls:
-            if tool_call.function.name == "add_task":
-                args = eval(tool_call.function.arguments)
-                result = add_task(**args)
-                conversations[user].append({"role": "assistant", "content": result})
-                return result
-            
-    else: print("NO TOOL CALLED")
-            
-    conversations[user].append({"role": "assistant", "content": message.content})
-    return message.content or "No response"
+            fname = tool_call.function.name
+            print(f"\n (LOG) {fname} called. \n")
+            args = json.loads(tool_call.function.arguments)
+
+            result = tools_map[fname](**args)
+
+            tool_msg = {
+                "role": "tool",
+                "tool_call_id": tool_call.id,
+                "name": fname,
+                "content": result,
+            }
+            tool_call_messages.append(tool_msg)
+
+            if fname == "upsert_user_profile":
+                name = args["name"]
+                role = args["role"]
+                conversations[name] = conversations.pop(ANONYMOUS_ID)
+                user = name
+
+        conversations[user].extend(tool_call_messages)  # append tool responses
+
+        # Follow up call to prompt user for details
+        followup_response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=conversations[user],
+            tools=tools,
+            tool_choice="auto"
+        )
+
+        followup_message = followup_response.choices[0].message
+        conversations[user].append({
+            "role": "assistant",
+            "content": followup_message.content
+        })
+
+        return followup_message.content or "No response", name, role
+
+    conversations[user].append({
+        "role": "assistant", 
+        "content": message.content
+    })
+    return message.content or "No response", None, None

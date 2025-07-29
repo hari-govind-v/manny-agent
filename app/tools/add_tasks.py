@@ -1,13 +1,15 @@
-from contants import tasks
+from constants import tasks
 
 def add_task(task: str, assignee: str) -> str:
-    tasks.append((task, assignee))
+    if assignee in tasks:
+        try: tasks[assignee].append(task)
+        except KeyError: tasks[assignee] = [task]
     print(f"Task added : {task} assigned to {assignee}")
     return f"Task has been assiged to {assignee}"
 
 add_task_schema = {
     "name": "add_task",
-    "description": "Add a task and assign it to a user",
+    "description": "Add a task and assign it to given user",
     "parameters": {
         "type": "object",
         "properties": {
