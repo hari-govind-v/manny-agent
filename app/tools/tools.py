@@ -7,6 +7,7 @@ tools_map = {
     "add_task": add_task,
     "get_tasks": get_tasks,
     "upsert_user_profile": upsert_user_profile,
+    "get_user_profile": get_user_profile
 }
 
 tools = [

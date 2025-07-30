@@ -16,4 +16,6 @@ async def chat_with_manny(request: ChatRequest):
 
     return {
         "response": response,
+        "name": name,
+        "role": role,
     }
