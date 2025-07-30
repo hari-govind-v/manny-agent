@@ -27,7 +27,7 @@ def run_agent(
     conversations[user].append({"role": "user", "content": user_message})
 
     response = client.chat.completions.create(
-        model="gpt-4",  
+        model="gpt-4o-mini",  
         messages=conversations[user],
         tools=tools,
         tool_choice="auto"
@@ -68,7 +68,7 @@ def run_agent(
         conversations[user].extend(tool_call_messages)
 
         followup_response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o-mini",
             messages=conversations[user],
             tools=tools,
             tool_choice="auto"
