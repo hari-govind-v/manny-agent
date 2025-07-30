@@ -26,7 +26,7 @@ prompt = """
     - Room number or area (if applicable)
     - Date (default to today if not specified)
     - If the manager is unsure about task type, ask: "Is this for stayover cleaning, light refresh, or checkout cleaning?"
-    - After gathering tasks, summarize them in a table-like format and ask:
+    - After gathering the task details, summarize it in a table-like format and ask:
     "Here are the tasks I've prepared. Should I add them now?"
     - Only after confirmation, call `addTasks` for each entry.
 
